@@ -4,9 +4,25 @@ import os
 import pyscreenshot as ImageGrab
 import time
 
-def updateScreenshot2():
-    cmd = "ffmpeg -video_size 3840x2160 -f x11grab -i :0.0+0,0 -vframes 1 -q:v 2 -y fullscreen.jpg"
-    os.system(cmd)
+html = """<!doctype html>
+<html>
+    <head>
+    </head>
+    <body>
+        <img id="img" width="100%" src="fullscreen.jpg">
+        <script>
+        function update() {
+            var source = 'fullscreen.jpg',
+                timestamp = (new Date()).getTime(),
+                newUrl = source + '?_=' + timestamp;
+            document.getElementById("img").src = newUrl;
+            setTimeout(update, 1000);
+        }
+        update();
+        </script>
+    </body>
+</html>
+"""
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     imageUpdatedAt = 0
@@ -22,10 +38,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if self.path == '/':
             self.send_response(200)
             self.end_headers()
-            f = open("index.html", "rb")
-            data = f.read()
-            f.close()
-            self.wfile.write(data)
+            global html
+            self.wfile.write(html.encode())
         elif self.path.startswith("/fullscreen.jpg"):
             if time.time() - self.imageUpdatedAt > 0.5:
                 self.updateScreenshot()
