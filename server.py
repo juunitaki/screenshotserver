@@ -3,7 +3,9 @@ import io
 import os
 import pyscreenshot as ImageGrab
 import time
+import socket
 
+port = 8000
 html = """<!doctype html>
 <html>
     <head>
@@ -26,7 +28,7 @@ html = """<!doctype html>
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     imageUpdatedAt = 0
-    imageData = ""
+    imageData = b""
 
     def updateScreenshot(self):
         im = ImageGrab.grab(childprocess=False)
@@ -45,9 +47,21 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.updateScreenshot()
                 self.imageUpdatedAt = time.time()
             self.send_response(200)
-            self.send_header('Content-Type', 'image/jpg')
+            self.send_header('Content-Type', 'image/jpeg')
+            self.send_header("Connection", "keep-alive")
+            self.send_header('Content-Length', str(len(self.imageData)))
             self.end_headers()
             self.wfile.write(self.imageData)
 
-httpd = HTTPServer(('localhost', 8000), SimpleHTTPRequestHandler)
+while True:
+    try:
+        httpd = HTTPServer(('localhost', port), SimpleHTTPRequestHandler)
+    except OSError as e:
+        if e.errno == 98: # Address already in use
+            port = port + 1
+            continue
+        else:
+            raise e
+    break
+
 httpd.serve_forever()
