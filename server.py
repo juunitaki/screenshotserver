@@ -1,4 +1,5 @@
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from socketserver import ThreadingMixIn
 import io
 import os
 import pyscreenshot as ImageGrab
@@ -26,7 +27,10 @@ html = """<!doctype html>
 </html>
 """
 
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+    pass
+
+class RequestHandler(SimpleHTTPRequestHandler):
     imageUpdatedAt = 0
     imageData = b""
 
@@ -67,7 +71,7 @@ def get_ip():
 
 while True:
     try:
-        httpd = HTTPServer(('localhost', port), SimpleHTTPRequestHandler)
+        httpd = ThreadingHTTPServer(('0.0.0.0', port), RequestHandler)
     except OSError as e:
         if e.errno == 98: # Address already in use
             port = port + 1
